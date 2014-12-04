@@ -276,8 +276,8 @@ $PDS_volume = $argv[1];
 $ouputDir = $argv[2];
 
 $URL = "/archive1/$PDS_volume/DATA/";
-
-// $timestamp = "29/6/2014";	//Our local last update with format : d/m/y (just number, no zeros !!!)
+	
+//Our local last update with format : d/m/y (just number, no zeros !!!)
 $timestamp = getTimestamp($ouputDir);	
 echo "[INFO] Last update : $timestamp\n";
 
