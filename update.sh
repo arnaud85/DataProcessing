@@ -40,3 +40,26 @@ do
 	rm $2/$dir/nc/*
 	sh convert2nc.sh $1 $2/$dir
 done
+
+#Move nc file to AMDA database
+if test "$1" == "COMAG_4002"
+then
+	
+	rsync -arv $2/KRTP/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1MIN/KRTP
+	ssh amda@manunja.cesr.fr bash < remote.sh
+
+	rsync -arv $2/KSM/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1MIN/KSM
+	ssh amda@manunja.cesr.fr bash < remote.sh
+
+	rsync -arv $2/KSO/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1MIN/KSO
+	ssh amda@manunja.cesr.fr bash < remote.sh
+
+	rsync -arv $2/RTN/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1MIN/RTN
+	ssh amda@manunja.cesr.fr bash < remote.sh
+
+else
+
+	echo "[ERROR] PDS volume is unknown"
+	exit 0
+fi
+
