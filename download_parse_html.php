@@ -2,7 +2,7 @@
 
 /******************************************************************************************
 Author 			: 			Arnaud BIEGUN
-Laste update 	: 			12/09/2014
+Laste update 	: 			04/12/2014
 Brief 			: 			Download PDS .LBL and .TAB files if needed comparing with 
 							the last update of these files
 *******************************************************************************************/
@@ -137,6 +137,67 @@ function getPDSLastModifiedYoungerDate($PDS_formated_date, $local_last_update) {
 }
 
 
+
+
+
+/**********************************************************************************
+						GETTIMESTAMP
+
+Brief 	: 	Get local timestamp to know the last update of a dataset
+arg1	:	Path to the dataset directory
+***********************************************************************************/
+function getTimestamp($dataset_directory)
+{
+	$timestamp_file = fopen($dataset_directory."/timestamp.txt", 'r');
+	
+	if ($timestamp_file !=  FALSE)
+	{
+		$timestamp = fgets($timestamp_file); 
+
+		fclose($timestamp_file);
+
+		return $timestamp;
+	}
+	else
+	{
+		die("[ERROR] Unable to read $dataset_directory/timestamp.txt\n");
+	}
+}
+
+
+
+
+
+/**********************************************************************************
+						SETTIMESTAMP
+
+Brief 	: 	Set local timestamp into the timestamp.txt file
+arg1	:	Timestamp
+arg2	:	Path to the dataset directory
+***********************************************************************************/
+function setTimestamp($timestamp, $dataset_directory)
+{
+	$timestamp_file = fopen($dataset_directory."/timestamp.txt", 'w');
+	
+	if ($timestamp_file !=  FALSE)
+	{
+		fseek($timestamp_file, 0); 
+		fputs($timestamp_file, $timestamp); 
+
+		fclose($timestamp_file);
+
+		return $timestamp;
+	}
+	else
+	{
+		die("[ERROR] Unable to read $dataset_directory/timestamp.txt\n");
+	}
+}
+
+
+
+
+
 /**********************************************************************************
 						GETPDSFILES
 
@@ -182,6 +243,8 @@ function getPDSFiles($URL, $timeStamp, $ouputDir) {
 
 				exec("wget -N -P ".$ouputDir." ".$PDS_ROOT.$link);
 				//echo "[INFO] Downloading $PDS_ROOT$link\n";
+
+				setTimestamp($youngerDate, $ouputDir);
 			}
 
 		}else {
@@ -210,11 +273,15 @@ if ($argc != 3) {
 }
 		
 $PDS_volume = $argv[1];
-$URL = "/archive1/$PDS_volume/DATA/";
-$timeStamp = "29/6/2014";	//Our local last update with format : d/m/y (just number, no zeros !!!)
-// $ouputDir = "/home/arnaud/WORK/TESTS/download/COMAG_4002/";
 $ouputDir = $argv[2];
 
-getPDSFiles($URL, $timeStamp, $ouputDir);
+$URL = "/archive1/$PDS_volume/DATA/";
+
+// $timestamp = "29/6/2014";	//Our local last update with format : d/m/y (just number, no zeros !!!)
+$timestamp = getTimestamp($ouputDir);	
+echo "[INFO] Last update : $timestamp\n";
+
+getPDSFiles($URL, $timestamp, $ouputDir);
+
 
 ?>
