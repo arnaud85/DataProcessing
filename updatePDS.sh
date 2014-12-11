@@ -21,8 +21,7 @@ fi
 
 ############ DOWNLOAD DATA ###########
 
-# php download_parse_html.php $1 $2
-php downloadPDS.php $1 $2
+# php downloadPDS.php $1 $2
 
 ######## END OF DOWNLOAD DATA ######## 
 
@@ -94,6 +93,61 @@ then
 
 	#Configure info files : prefix_times, prefix_info, prefix_cache
 	ssh amda@manunja.cesr.fr bash < remote_COMAG_4001.sh
+
+
+
+elif test "$1" == "MESSMAGDATA_3001"
+then
+
+	cd $2
+
+	cp *_60_* 1M/
+	cp *_01_* 1S/
+
+	rm *_60_*
+	rm *_01_*
+
+	# Convert files to netCDF format
+	i=0;
+	for file in 1M/MAGMSO*.LBL
+	do
+		days_60[$i]=${file:15:5}
+		let i++
+	done
+
+	i=0;
+	for file in 1S/MAGMSO*.LBL
+	do
+		days_01[$i]=${file:15:5}
+		let i++
+	done
+
+	cd 1M/
+
+	i=0
+	for i in "${!days_60[@]}"
+	do 
+		# echo "Key : $i; Value : ${days_60[$i]}"
+		convert2nc MESSENGER_MAG.xml MAGMSOSCIAVG${days_60[$i]}_60_V05.LBL MAGMBFSCIAVG${days_60[$i]}_60_V05.LBL MAGRTNSCIAVG${days_60[$i]}_60_V05.LBL
+	done
+
+	cd ../1S/
+
+	i=0
+	for i in "${!days_01[@]}"
+	do 
+		# echo "Key : $i; Value : ${days_01[$i]}"
+		convert2nc MESSENGER_MAG.xml MAGMSOSCIAVG${days_01[$i]}_01_V05.LBL MAGMBFSCIAVG${days_01[$i]}_01_V05.LBL MAGRTNSCIAVG${days_01[$i]}_01_V05.LBL
+	done
+
+	cd ..
+	
+	#Move nc file to AMDA database
+	rsync -arv $2/1M/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/MES/MAG/ORBIT/1M
+	rsync -arv $2/1S/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/MES/MAG/ORBIT/1S
+
+	#Configure info files : prefix_times, prefix_info, prefix_cache
+	ssh amda@manunja.cesr.fr bash < remote_MESSMAGDATA_3001.sh
 
 else
 
