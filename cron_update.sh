@@ -1,0 +1,1 @@
+sh update.sh COMAG_4002 /home/arnaud/WORK/DATA/COMAG_4002
