@@ -2,16 +2,19 @@
 
 
 ######################### USAGE ###############################
-if test $# -ne 2
+if test $# -ne 1
 then
 	
-	echo "[ERROR] USAGE : sh update.sh (PDS_VOLUME) (LOCAL_DIR_PATH)"
+	echo "[ERROR] USAGE : sh update.sh PDS_VOLUME"
 	exit 0
 
 else
 
-	echo "[INFO] PDS_VOLUME : $1"
-	echo "[INFO] LOCAL_DIR_PATH : $2"
+	PDS_data="$1"
+	local_dir="/home/arnaud/WORK/DATA/$1/"	
+	
+	echo "[INFO] PDS_VOLUME : $PDS_data"
+	echo "[INFO] LOCAL_DIR  : $local_dir"
 fi
 
 ################### END OF USAGE ###############################
@@ -21,47 +24,62 @@ fi
 
 ############ DOWNLOAD DATA ###########
 
-# php downloadPDS.php $1 $2
+# php downloadPDS.php $PDS_data $local_dir
 
 ######## END OF DOWNLOAD DATA ######## 
 
 
 
 ####################### PDS VOLUME ############################
-if test "$1" == "COMAG_4002"
+if test "$PDS_data" == "COMAG_4002"
 then
 	
-	rm $2/KRTP/*.TAB
-	rm $2/KRTP/*.LBL
-	rm $2/KSM/*.TAB
-	rm $2/KSM/*.LBL
-	rm $2/KSO/*.TAB
-	rm $2/KSO/*.LBL
-	rm $2/RTN/*.TAB
-	rm $2/RTN/*.LBL
+	# Clean
+	rm $local_dir/KRTP/*.TAB
+	rm $local_dir/KRTP/*.LBL
+	rm $local_dir/KSM/*.TAB
+	rm $local_dir/KSM/*.LBL
+	rm $local_dir/KSO/*.TAB
+	rm $local_dir/KSO/*.LBL
+	rm $local_dir/RTN/*.TAB
+	rm $local_dir/RTN/*.LBL
 
-	mv $2/*_KRTP* $2/KRTP/
-	mv $2/*_KSM* $2/KSM/
-	mv $2/*_KSO* $2/KSO/
-	mv $2/*_RTN* $2/RTN/
+	# Push files into right directory
+	mv $local_dir/*_KRTP* $local_dir/KRTP/
+	mv $local_dir/*_KSM* $local_dir/KSM/
+	mv $local_dir/*_KSO* $local_dir/KSO/
+	mv $local_dir/*_RTN* $local_dir/RTN/
 
 	# Convert data into netCDF format
 	for dir in KRTP KSM KSO RTN
 	do
-		rm $2/$dir/nc/*
-		sh convert2nc.sh $1 $2/$dir
+		rm $local_dir/$dir/nc/*
+		sh convert2nc.sh $PDS_data $local_dir/$dir
 	done
 	
 	#Move nc file to AMDA database
-	rsync -arv $2/KRTP/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1MIN/KRTP
-	rsync -arv $2/KSM/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1MIN/KSM
-	rsync -arv $2/KSO/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1MIN/KSO
-	rsync -arv $2/RTN/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1MIN/RTN
+	for dir in KRTP KSM KSO RTN; do
+		
+		rsync -arv $local_dir/$dir/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1MIN/$dir
+	done
+	
 	
 	#Configure info files : prefix_times, prefix_info, prefix_cache
-	ssh amda@manunja.cesr.fr bash < remote_COMAG_4002.sh
+	# ssh amda@manunja.cesr.fr bash < remote_COMAG_4002.sh
+	for dir in KRTP KSM KSO RTN; do
+		
+		ssh amda@manunja.cesr.fr ". /home/budnik/depotDECODER/env.sh; 
+		cd /data/DDBASE/DATA/CASSINI/MAG/1MIN/$dir; 
+		cp /data/DDBASE/DATA/LOCK .; 
+		/home/budnik/AMDANEW/DDLIB/bin/TimesUpdate -u mag_times.nc mag_[0-9]*.nc;
+		php /home/budnik/AMDANEW/DDLIB/bin/UpdateInfo.php mag; 
+		php /home/budnik/depotDECODER/TOOLS/DataBaseLog/updateDataBaseLog.php /data/DDBASE/DATA/CASSINI/MAG/1MIN/$dir;
+		rm LOCK"
+	done
 
-elif test "$1" == "COMAG_4001"
+	
+
+elif test "$PDS_data" == "COMAG_4001"
 then
 
 	#rm $2/KRTP/*.TAB
@@ -73,33 +91,33 @@ then
 	#rm $2/RTN/*.TAB
 	#rm $2/RTN/*.LBL
 
-	mv $2/*_KRTP* $2/KRTP/
-	mv $2/*_KSM* $2/KSM/
-	mv $2/*_KSO* $2/KSO/
-	mv $2/*_RTN* $2/RTN/
+	mv $local_dir/*_KRTP* $local_dir/KRTP/
+	mv $local_dir/*_KSM* $local_dir/KSM/
+	mv $local_dir/*_KSO* $local_dir/KSO/
+	mv $local_dir/*_RTN* $local_dir/RTN/
 
 	# Convert data into netCDF format
 	for dir in KRTP KSM KSO RTN
 	do
-		rm $2/$dir/nc/*
-		sh convert2nc.sh $1 $2/$dir
+		rm $local_dir/$dir/nc/*
+		sh convert2nc.sh $PDS_data $local_dir/$dir
 	done
 	
 	#Move nc file to AMDA database
-	rsync -arv $2/KRTP/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1SEC/KRTP
-	rsync -arv $2/KSM/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1SEC/KSM
-	rsync -arv $2/KSO/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1SEC/KSO
-	rsync -arv $2/RTN/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1SEC/RTN
+	rsync -arv $local_dir/KRTP/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1SEC/KRTP
+	rsync -arv $local_dir/KSM/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1SEC/KSM
+	rsync -arv $local_dir/KSO/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1SEC/KSO
+	rsync -arv $local_dir/RTN/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1SEC/RTN
 
 	#Configure info files : prefix_times, prefix_info, prefix_cache
 	ssh amda@manunja.cesr.fr bash < remote_COMAG_4001.sh
 
 
 
-elif test "$1" == "MESSMAGDATA_3001"
+elif test "$PDS_data" == "MESSMAGDATA_3001"
 then
 
-	cd $2
+	cd $local_dir
 
 	cp *_60_* 1M/
 	cp *_01_* 1S/
@@ -143,8 +161,8 @@ then
 	cd ..
 	
 	#Move nc file to AMDA database
-	rsync -arv $2/1M/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/MES/MAG/ORBIT/1M
-	rsync -arv $2/1S/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/MES/MAG/ORBIT/1S
+	rsync -arv $local_dir/1M/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/MES/MAG/ORBIT/1M
+	rsync -arv $local_dir/1S/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/MES/MAG/ORBIT/1S
 
 	#Configure info files : prefix_times, prefix_info, prefix_cache
 	ssh amda@manunja.cesr.fr bash < remote_MESSMAGDATA_3001.sh
