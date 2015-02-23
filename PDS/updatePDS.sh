@@ -24,7 +24,7 @@ fi
 
 ############ DOWNLOAD DATA ###########
 
-# php downloadPDS.php $PDS_data $local_dir
+php downloadPDS.php $PDS_data $local_dir
 
 ######## END OF DOWNLOAD DATA ######## 
 
@@ -64,12 +64,10 @@ then
 	done
 	
 	
-	#Configure info files : prefix_times, prefix_info, prefix_cache
-	# ssh amda@manunja.cesr.fr bash < remote_COMAG_4002.sh
+	#Set time update
 	for dir in KRTP KSM KSO RTN; do
 		
-		ssh amda@manunja.cesr.fr ". /home/budnik/depotDECODER/env.sh; 
-		cd /data/DDBASE/DATA/CASSINI/MAG/1MIN/$dir; 
+		ssh amda@manunja.cesr.fr "cd /data/DDBASE/DATA/CASSINI/MAG/1MIN/$dir; 
 		cp /data/DDBASE/DATA/LOCK .; 
 		/home/budnik/AMDANEW/DDLIB/bin/TimesUpdate -u mag_times.nc mag_[0-9]*.nc;
 		php /home/budnik/AMDANEW/DDLIB/bin/UpdateInfo.php mag; 
@@ -82,14 +80,14 @@ then
 elif test "$PDS_data" == "COMAG_4001"
 then
 
-	#rm $2/KRTP/*.TAB
-	#rm $2/KRTP/*.LBL
-	#rm $2/KSM/*.TAB
-	#rm $2/KSM/*.LBL
-	#rm $2/KSO/*.TAB
-	#rm $2/KSO/*.LBL
-	#rm $2/RTN/*.TAB
-	#rm $2/RTN/*.LBL
+	rm $2/KRTP/*.TAB
+	rm $2/KRTP/*.LBL
+	rm $2/KSM/*.TAB
+	rm $2/KSM/*.LBL
+	rm $2/KSO/*.TAB
+	rm $2/KSO/*.LBL
+	rm $2/RTN/*.TAB
+	rm $2/RTN/*.LBL
 
 	mv $local_dir/*_KRTP* $local_dir/KRTP/
 	mv $local_dir/*_KSM* $local_dir/KSM/
@@ -104,13 +102,21 @@ then
 	done
 	
 	#Move nc file to AMDA database
-	rsync -arv $local_dir/KRTP/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1SEC/KRTP
-	rsync -arv $local_dir/KSM/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1SEC/KSM
-	rsync -arv $local_dir/KSO/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1SEC/KSO
-	rsync -arv $local_dir/RTN/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1SEC/RTN
+	for dir in KRTP KSM KSO RTN; do
+		
+		rsync -arv $local_dir/$dir/nc/ amda@manunja.cesr.fr:/data/DDBASE/DATA/CASSINI/MAG/1SEC/$dir
+	done
 
-	#Configure info files : prefix_times, prefix_info, prefix_cache
-	ssh amda@manunja.cesr.fr bash < remote_COMAG_4001.sh
+	#Set time update
+	for dir in KRTP KSM KSO RTN; do
+		
+		ssh amda@manunja.cesr.fr "cd /data/DDBASE/DATA/CASSINI/MAG/1SEC/$dir; 
+		cp /data/DDBASE/DATA/LOCK .; 
+		/home/budnik/AMDANEW/DDLIB/bin/TimesUpdate -u mag_times.nc mag_[0-9]*.nc;
+		php /home/budnik/AMDANEW/DDLIB/bin/UpdateInfo.php mag; 
+		php /home/budnik/depotDECODER/TOOLS/DataBaseLog/updateDataBaseLog.php /data/DDBASE/DATA/CASSINI/MAG/1SEC/$dir;
+		rm LOCK"
+	done
 
 
 
