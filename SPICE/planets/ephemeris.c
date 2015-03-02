@@ -17,10 +17,7 @@
 //SPICE constants
 #define KERNELS     			"ephemeris.tm"
 #define TXT_FILE    			"ephemeris.txt"
-//#define TARGET					"EARTH"
-//#define TARGET					"MARS"
 #define TARGET					argv[1]
-//#define OBSERVER    			"SUN"
 #define OBSERVER    			argv[2]
 #define FRAME1   				"HCI"
 #define FRAME2   				"IAU_SUN"

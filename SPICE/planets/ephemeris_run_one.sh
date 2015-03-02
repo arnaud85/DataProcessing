@@ -20,4 +20,4 @@ gcc ephemeris.c -o ephemeris -I/home/arnaud/WORK/TOOLS/LIB/cspice/include -I/hom
 ./ephemeris "9" "SUN" "pluto" "1970-01-01T00:00:00" "1970-02-01T00:00:00"			#PLUTO
 
 #Move to test directory
-mv *.nc test_dir/
+mv *.nc nc/
