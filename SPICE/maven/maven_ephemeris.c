@@ -55,6 +55,7 @@ int getDistance(SpiceInt n_iter, SpiceDouble **positions, SpiceDouble dist[]);
 int getFilesName(const char *bodyName, char startTime[], char ext[], char filename[]);
 int time2DDtime(double et_time, dd_time_t *DDtime);
 void nc_handle_error(int status, char* operation);
+int createTextFile(char* filename, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos_iau_mars[3], SpiceDouble lon_iau_mars[], SpiceDouble lat_iau_mars[], SpiceDouble dist[]);
 int createNc(char* ncfile, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos_iau_mars[3], SpiceDouble lon_iau_mars[], SpiceDouble lat_iau_mars[], SpiceDouble dist[]);
 
 
@@ -131,6 +132,10 @@ int main(int argc, char const *argv[])
 
 	//Get files name
 	getFilesName(BODY_NAME, START_DATE, ".nc", nc_filename);
+
+	// Write ascii text file
+	createTextFile("maven_orb.txt", n, t,  pos_iau, lon_iau, lat_iau, distance);
+
 
 	//Write celestial body positions NC file
 	createNc(nc_filename, n, t, pos_iau, lon_iau, lat_iau, distance);
@@ -264,6 +269,30 @@ int time2DDtime(double et_time, dd_time_t *DDtime)
 	
 	return 0;
 } 
+
+
+// FUNCTION : createTextFile
+int createTextFile(char* filename, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos_iau_mars[3], SpiceDouble lon_iau_mars[], SpiceDouble lat_iau_mars[], SpiceDouble dist[])
+{
+	FILE* file = NULL;
+	int i;
+ 
+    file = fopen(filename, "w");
+ 
+    if (file != NULL)
+    {
+        for (i = 0; i < n_iter; i++)
+        {
+        	fprintf(file, "%.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", t[i], pos_iau_mars[i][0], pos_iau_mars[i][1], pos_iau_mars[i][2], lon_iau_mars[i], lat_iau_mars[i], dist[i]);
+        }
+
+        fclose(file);
+
+        printf("[INFO] %s has been created\n", filename);
+    }
+
+	return 0;
+}
 
 
 

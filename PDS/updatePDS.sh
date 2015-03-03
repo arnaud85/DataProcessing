@@ -1,5 +1,6 @@
 #!/bin/bash
-# Version: 2015-02-25 Arnaud BIEGUN $
+# Version: 2015-02-25 Arnaud BIEGUN
+# Download $PDS_dataset_path data from "http://ppi.pds.nasa.gov/data/" URL
 
 if [[ $# -ne 1 ]]; then
 	
