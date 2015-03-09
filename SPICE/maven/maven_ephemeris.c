@@ -35,7 +35,7 @@
 #define STOP_VAR        		"StopTime"
 #define SOURCE          		"SPICE-NAIF"
 #define POS_UNIT				"km"
-#define DIST_UNIT       		"km" 
+#define DIST_UNIT       		"R_MARS" 
 #define LON_UNIT       			"rad" 
 #define LAT_UNIT                "rad"
 #define TIME_STR_LEN    		 17
@@ -269,6 +269,8 @@ int getDistance(SpiceInt n_iter, SpiceDouble **positions, SpiceDouble dist[])
 	for (i = 0; i < n_iter; i++)
 	{
 		dist[i] = sqrt(positions[i][0]*positions[i][0] + positions[i][1]*positions[i][1] + positions[i][2]*positions[i][2]);
+
+		dist[i] /= R_MARS;
 	}
 }
 
