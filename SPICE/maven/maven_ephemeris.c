@@ -34,7 +34,7 @@
 #define START_VAR       		"StartTime"
 #define STOP_VAR        		"StopTime"
 #define SOURCE          		"SPICE-NAIF"
-#define POS_UNIT				"km"
+#define POS_UNIT				"R_MARS"
 #define DIST_UNIT       		"R_MARS" 
 #define LON_UNIT       			"rad" 
 #define LAT_UNIT                "rad"
@@ -212,10 +212,10 @@ int getPositions(const char *target, SpiceDouble et_0, SpiceInt step, SpiceInt n
 
 		spkpos_c(target, t[i], frame, ab_corr, observer,  positions[i],  &light_time);
 
-		// for (j = 0; j < 3; j++)
-		// {
-		// 	positions[i][j] /= AU;
-		// }
+		for (j = 0; j < 3; j++)
+		{
+			positions[i][j] /= R_MARS;
+		}
 		
 	}
 
@@ -269,8 +269,6 @@ int getDistance(SpiceInt n_iter, SpiceDouble **positions, SpiceDouble dist[])
 	for (i = 0; i < n_iter; i++)
 	{
 		dist[i] = sqrt(positions[i][0]*positions[i][0] + positions[i][1]*positions[i][1] + positions[i][2]*positions[i][2]);
-
-		dist[i] /= R_MARS;
 	}
 }
 
