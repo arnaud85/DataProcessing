@@ -27,13 +27,10 @@
 #define TIMELEN_DIM 			"TimeLength"
 #define POS_DIM        			"Position"
 #define TIME_VAR   				"Time"
-// #define POS_VAR_IAU     		"XYZ_IAU_MARS"
 #define POS_VAR_MSO     		"XYZ_MSO"
-// #define LON_VAR_IAU_SUN 		"LON_IAU_MARS"
-#define LON_VAR_MSO 			"LON_MSO"
-// #define LAT_VAR_IAU_SUN 		"LAT_IAU_MARS"
-#define LAT_VAR_MSO 			"LAT_MSO"
-#define DIST_VAR        		"R"
+#define LON_VAR_IAU_MARS 		"LON_IAU_MARS"
+#define LAT_VAR_IAU_MARS 		"LAT_IAU_MARS"
+#define DIST_VAR_IAU_MARS       "R_IAU_MARS"
 #define START_VAR       		"StartTime"
 #define STOP_VAR        		"StopTime"
 #define SOURCE          		"SPICE-NAIF"
@@ -139,10 +136,10 @@ int main(int argc, char const *argv[])
 	getPositions(TARGET, et_0, STEP, n, FRAME_IAU_MARS, ABCORR, OBSERVER, t, pos_iau_mars);
 
 	//Compute longitudes and latitudes
-	getLonLat(pos_mso, lon_iau, lat_iau, n);
+	getLonLat(pos_iau_mars, lon_iau, lat_iau, n);
 
 	//Compute distance to Mars
-	getDistance(n, pos_mso, distance);
+	getDistance(n, pos_iau_mars, distance);
 
 	//Get files name
 	getFilesName(BODY_NAME, START_DATE, ".nc", nc_filename);
@@ -161,10 +158,16 @@ int main(int argc, char const *argv[])
 	{
 		free(pos_mso[i]);
 		pos_mso[i] = NULL;
+
+		free(pos_iau_mars[i]);
+		pos_iau_mars[i] = NULL;
 	}
 
 	free(pos_mso);
 	pos_mso = NULL;
+
+	free(pos_iau_mars);
+	pos_iau_mars = NULL;
 
 	free(lon_iau);
 	lon_iau = NULL;
@@ -422,21 +425,21 @@ int createNc(char* ncfile, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos
 	}
 
 
-	retval = nc_def_var(ncid, LON_VAR_MSO, NC_DOUBLE, 1, &time_dimid, &longitude_iau_varid);
+	retval = nc_def_var(ncid, LON_VAR_IAU_MARS, NC_DOUBLE, 1, &time_dimid, &longitude_iau_varid);
 	if (retval != NC_NOERR)
 	{
 		nc_handle_error(retval, "LON IAU_MARS variable");
 	}
-	retval = nc_def_var(ncid, LAT_VAR_MSO, NC_DOUBLE, 1, &time_dimid, &latitude_iau_varid);
+	retval = nc_def_var(ncid, LAT_VAR_IAU_MARS, NC_DOUBLE, 1, &time_dimid, &latitude_iau_varid);
 	if (retval != NC_NOERR)
 	{
 		nc_handle_error(retval, "LAT IAU_MARS variable");
 	}
 
-	retval = nc_def_var(ncid, DIST_VAR, NC_DOUBLE, 1, &time_dimid, &distance_varid);
+	retval = nc_def_var(ncid, DIST_VAR_IAU_MARS, NC_DOUBLE, 1, &time_dimid, &distance_varid);
 	if (retval != NC_NOERR)
 	{
-		nc_handle_error(retval, "Distance variable");
+		nc_handle_error(retval, "Distance IAU_MARS variable");
 	}
 
 	retval = nc_def_var(ncid, START_VAR, NC_CHAR, 1, &timelength_dimid, &startTime_varid);
