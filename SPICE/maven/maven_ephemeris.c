@@ -18,7 +18,8 @@
 #define KERNELS     			"maven_ephemeris.tm"
 #define TARGET					argv[1]
 #define OBSERVER    			argv[2]
-#define FRAME   				"IAU_MARS"
+// #define FRAME   				"IAU_MARS"
+#define FRAME   				"MAVEN_MSO"
 #define ABCORR					"NONE"
 
 //NETCDF constants
@@ -26,9 +27,12 @@
 #define TIMELEN_DIM 			"TimeLength"
 #define POS_DIM        			"Position"
 #define TIME_VAR   				"Time"
-#define POS_VAR_IAU     		"XYZ_IAU_MARS"
-#define LON_VAR_IAU_SUN 		"LON_IAU_MARS"
-#define LAT_VAR_IAU_SUN 		"LAT_IAU_MARS"
+// #define POS_VAR_IAU     		"XYZ_IAU_MARS"
+#define POS_VAR_IAU     		"XYZ_MSO"
+// #define LON_VAR_IAU_SUN 		"LON_IAU_MARS"
+#define LON_VAR_IAU_SUN 		"LON_MSO"
+// #define LAT_VAR_IAU_SUN 		"LAT_IAU_MARS"
+#define LAT_VAR_IAU_SUN 		"LAT_MSO"
 #define DIST_VAR        		"R"
 #define START_VAR       		"StartTime"
 #define STOP_VAR        		"StopTime"
@@ -42,7 +46,10 @@
 //Other constants
 #define BODY_NAME               argv[3]
 // #define AU              		149597870
-#define STEP    				3600.0 
+#define J2000 					946728000
+#define R_MARS 					3390.0
+// #define STEP    				3600.0
+#define STEP    				60.0
 #define ERRCODE 				2
 
 
@@ -86,6 +93,7 @@ int main(int argc, char const *argv[])
 	//Configure boundaries
 	strcpy(START_DATE, argv[4]);
 	strcpy(STOP_DATE, argv[5]);
+
 	n = getBoundaries(START_DATE, &et_0, STOP_DATE, &et_end);
 	if (n <= 0)
 	{
@@ -134,8 +142,7 @@ int main(int argc, char const *argv[])
 	getFilesName(BODY_NAME, START_DATE, ".nc", nc_filename);
 
 	// Write ascii text file
-	createTextFile("maven_orb.txt", n, t,  pos_iau, lon_iau, lat_iau, distance);
-
+	createTextFile("maven_orbit_arnaud.txt", n, t,  pos_iau, lon_iau, lat_iau, distance);
 
 	//Write celestial body positions NC file
 	createNc(nc_filename, n, t, pos_iau, lon_iau, lat_iau, distance);
@@ -260,12 +267,14 @@ int getDistance(SpiceInt n_iter, SpiceDouble **positions, SpiceDouble dist[])
 //FUNCTION : time2DDtime
 int time2DDtime(double et_time, dd_time_t *DDtime)
 {
-	char *date_unix_zero = "1970-01-01T00:00:00";
-	SpiceDouble et_unix_zero;
+	// char *date_unix_zero = "1970-01-01T00:00:00";
+	// SpiceDouble et_unix_zero;
 
-	str2et_c(date_unix_zero, &et_unix_zero);
+	// str2et_c(date_unix_zero, &et_unix_zero);
 
-	strcpy(*DDtime, Double2DD_Time(et_time-et_unix_zero));
+	// strcpy(*DDtime, Double2DD_Time(et_time-et_unix_zero));
+
+	strcpy(*DDtime, Double2DD_Time(et_time+J2000));
 	
 	return 0;
 } 
@@ -281,9 +290,16 @@ int createTextFile(char* filename, SpiceDouble n_iter, SpiceDouble t[], SpiceDou
  
     if (file != NULL)
     {
+
+        // Mars radius
+        // for (i = 0; i < n_iter; i++)
+        // {
+        // 	fprintf(file, "%.2f %.2f %.2f %.2f %.2f\n", t[i]+J2000, pos_iau_mars[i][0]/R_MARS, pos_iau_mars[i][1]/R_MARS, pos_iau_mars[i][2]/R_MARS, dist[i]/R_MARS);
+        // }
+
         for (i = 0; i < n_iter; i++)
         {
-        	fprintf(file, "%.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", t[i], pos_iau_mars[i][0], pos_iau_mars[i][1], pos_iau_mars[i][2], lon_iau_mars[i], lat_iau_mars[i], dist[i]);
+        	fprintf(file, "%.2f %.2f %.2f %.2f %.2f\n", t[i]+J2000, pos_iau_mars[i][0], pos_iau_mars[i][1], pos_iau_mars[i][2], dist[i]);
         }
 
         fclose(file);

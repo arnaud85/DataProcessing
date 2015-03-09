@@ -7,6 +7,7 @@
         'kernels/general/pck00010.tpc'
         'kernels/general/mar097s.bsp' 
     	'kernels/Maven/maven_orb_rec.bsp'
+    	'kernels/Maven/maven_v05.tf'
     )
    
 \begintext
