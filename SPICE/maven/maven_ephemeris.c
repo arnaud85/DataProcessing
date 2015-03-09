@@ -36,8 +36,10 @@
 #define SOURCE          		"SPICE-NAIF"
 #define POS_UNIT				"R_MARS"
 #define DIST_UNIT       		"R_MARS" 
-#define LON_UNIT       			"rad" 
-#define LAT_UNIT                "rad"
+// #define LON_UNIT       			"rad" 
+// #define LAT_UNIT                "rad"
+#define LON_UNIT       			"deg" 
+#define LAT_UNIT                "deg"
 #define TIME_STR_LEN    		 17
 
 //Other constants
@@ -47,6 +49,7 @@
 #define R_MARS 					3390.0
 // #define STEP    				3600.0
 #define STEP    				60.0
+#define RAD2DEG 				180/M_PI
 #define ERRCODE 				2
 
 
@@ -235,8 +238,11 @@ int getLonLat(SpiceDouble **pos, SpiceDouble lon[], SpiceDouble lat[], int n)
 	{
 		reclat_c(pos[i], &radius, &longitude, &latitude);
 
-		lon[i] = longitude;
-		lat[i] = latitude;
+		// lon[i] = longitude;
+		// lat[i] = latitude;
+
+		lon[i] = longitude * RAD2DEG;
+		lat[i] = latitude * RAD2DEG;
 	}
                    
 	return 0;
