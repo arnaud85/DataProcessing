@@ -18,8 +18,8 @@
 #define KERNELS     			"maven_ephemeris.tm"
 #define TARGET					argv[1]
 #define OBSERVER    			argv[2]
-// #define FRAME   				"IAU_MARS"
-#define FRAME   				"MAVEN_MSO"
+#define FRAME_IAU_MARS  		"IAU_MARS"
+#define FRAME_MSO   			"MAVEN_MSO"
 #define ABCORR					"NONE"
 
 //NETCDF constants
@@ -28,11 +28,11 @@
 #define POS_DIM        			"Position"
 #define TIME_VAR   				"Time"
 // #define POS_VAR_IAU     		"XYZ_IAU_MARS"
-#define POS_VAR_IAU     		"XYZ_MSO"
+#define POS_VAR_MSO     		"XYZ_MSO"
 // #define LON_VAR_IAU_SUN 		"LON_IAU_MARS"
-#define LON_VAR_IAU_SUN 		"LON_MSO"
+#define LON_VAR_MSO 			"LON_MSO"
 // #define LAT_VAR_IAU_SUN 		"LAT_IAU_MARS"
-#define LAT_VAR_IAU_SUN 		"LAT_MSO"
+#define LAT_VAR_MSO 			"LAT_MSO"
 #define DIST_VAR        		"R"
 #define START_VAR       		"StartTime"
 #define STOP_VAR        		"StopTime"
@@ -57,13 +57,13 @@
 int loadKernels(char *kernelsList);
 int getBoundaries(char *et_0_str, SpiceDouble *et_0, char *et_end_str, SpiceDouble *et_end);
 int getPositions(const char *target, SpiceDouble et_0, SpiceInt step, SpiceInt n_iter, const char *frame, const char *ab_corr, const char *observer, SpiceDouble t[], SpiceDouble **positions);
-int getLonLat(SpiceDouble **earth_pos, SpiceDouble lon[], SpiceDouble lat[], int n);
+int getLonLat(SpiceDouble **pos, SpiceDouble lon[], SpiceDouble lat[], int n);
 int getDistance(SpiceInt n_iter, SpiceDouble **positions, SpiceDouble dist[]);
 int getFilesName(const char *bodyName, char startTime[], char ext[], char filename[]);
 int time2DDtime(double et_time, dd_time_t *DDtime);
 void nc_handle_error(int status, char* operation);
-int createTextFile(char* filename, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos_iau_mars[3], SpiceDouble lon_iau_mars[], SpiceDouble lat_iau_mars[], SpiceDouble dist[]);
-int createNc(char* ncfile, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos_iau_mars[3], SpiceDouble lon_iau_mars[], SpiceDouble lat_iau_mars[], SpiceDouble dist[]);
+int createTextFile(char* filename, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos_mso_mars[3], SpiceDouble lon_iau_mars[], SpiceDouble lat_iau_mars[], SpiceDouble dist[]);
+int createNc(char* ncfile, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos_mso_mars[3], SpiceDouble lon_iau_mars[], SpiceDouble lat_iau_mars[], SpiceDouble dist[]);
 
 
 int main(int argc, char const *argv[])
@@ -72,7 +72,8 @@ int main(int argc, char const *argv[])
 	SpiceDouble et_0;
 	SpiceDouble et_end;
 	SpiceDouble *t = NULL;
-	SpiceDouble **pos_iau = NULL;
+	SpiceDouble **pos_mso = NULL;
+	SpiceDouble **pos_iau_mars = NULL;
 	SpiceDouble *lon_iau = NULL;
 	SpiceDouble *lat_iau = NULL;
 	SpiceDouble *distance = NULL;
@@ -104,12 +105,13 @@ int main(int argc, char const *argv[])
 
 	//Memory allocation
 	t = (SpiceDouble*) malloc(n*sizeof(SpiceDouble));
-	pos_iau = (SpiceDouble**) malloc(n*sizeof(SpiceDouble*));
+	pos_mso = (SpiceDouble**) malloc(n*sizeof(SpiceDouble*));
+	pos_iau_mars = (SpiceDouble**) malloc(n*sizeof(SpiceDouble*));
 	distance = (SpiceDouble*) malloc(n*sizeof(SpiceDouble));
 	lon_iau = (SpiceDouble*) malloc(n*sizeof(SpiceDouble));
 	lat_iau = (SpiceDouble*) malloc(n*sizeof(SpiceDouble));
 
-	if ( (t == NULL) || (pos_iau == NULL) || (lon_iau == NULL) || (lat_iau == NULL) || (distance == NULL) )
+	if ( (t == NULL) || (pos_mso == NULL) || (pos_iau_mars == NULL) || (lon_iau == NULL) || (lat_iau == NULL) || (distance == NULL) )
 	{
 		printf("[ERROR] Memory allocation has failed. Not enough memory.\n");
 
@@ -119,10 +121,13 @@ int main(int argc, char const *argv[])
 	{
 		for (i = 0; i < n; i++)
 		{
-			pos_iau[i] = NULL;
-			pos_iau[i] = (SpiceDouble*) malloc(3*sizeof(SpiceDouble));
+			pos_mso[i] = NULL;
+			pos_mso[i] = (SpiceDouble*) malloc(3*sizeof(SpiceDouble));
 
-			if (pos_iau[i] == NULL)
+			pos_iau_mars[i] = NULL;
+			pos_iau_mars[i] = (SpiceDouble*) malloc(3*sizeof(SpiceDouble));
+
+			if ( (pos_mso[i] == NULL) || (pos_iau_mars[i] == NULL) )
 			{
 				printf("[ERROR] Position : Memory allocation has failed.\n");
 			}
@@ -130,22 +135,23 @@ int main(int argc, char const *argv[])
 	}
 	
 	//Compute n positions of the celestial body wanted starting from et_0 epoch with a STEP step
-	getPositions(TARGET, et_0, STEP, n, FRAME, ABCORR, OBSERVER, t, pos_iau);
+	getPositions(TARGET, et_0, STEP, n, FRAME_MSO, ABCORR, OBSERVER, t, pos_mso);
+	getPositions(TARGET, et_0, STEP, n, FRAME_IAU_MARS, ABCORR, OBSERVER, t, pos_iau_mars);
 
 	//Compute longitudes and latitudes
-	getLonLat(pos_iau, lon_iau, lat_iau, n);
+	getLonLat(pos_mso, lon_iau, lat_iau, n);
 
 	//Compute distance to Mars
-	getDistance(n, pos_iau, distance);
+	getDistance(n, pos_mso, distance);
 
 	//Get files name
 	getFilesName(BODY_NAME, START_DATE, ".nc", nc_filename);
 
 	// Write ascii text file
-	createTextFile("maven_orbit_arnaud.txt", n, t,  pos_iau, lon_iau, lat_iau, distance);
+	createTextFile("maven_orbit_arnaud.txt", n, t,  pos_mso, lon_iau, lat_iau, distance);
 
 	//Write celestial body positions NC file
-	createNc(nc_filename, n, t, pos_iau, lon_iau, lat_iau, distance);
+	createNc(nc_filename, n, t, pos_mso, lon_iau, lat_iau, distance);
 
 	//Free memory
 	free(t);
@@ -153,12 +159,12 @@ int main(int argc, char const *argv[])
 
 	for (i = 0; i < n; i++)
 	{
-		free(pos_iau[i]);
-		pos_iau[i] = NULL;
+		free(pos_mso[i]);
+		pos_mso[i] = NULL;
 	}
 
-	free(pos_iau);
-	pos_iau = NULL;
+	free(pos_mso);
+	pos_mso = NULL;
 
 	free(lon_iau);
 	lon_iau = NULL;
@@ -215,7 +221,7 @@ int getPositions(const char *target, SpiceDouble et_0, SpiceInt step, SpiceInt n
 
 
 //FUNCTION : getLonLat
-int getLonLat(SpiceDouble **earth_pos, SpiceDouble lon[], SpiceDouble lat[], int n)
+int getLonLat(SpiceDouble **pos, SpiceDouble lon[], SpiceDouble lat[], int n)
 {
 	SpiceInt i;
 	SpiceDouble radius;
@@ -224,7 +230,7 @@ int getLonLat(SpiceDouble **earth_pos, SpiceDouble lon[], SpiceDouble lat[], int
 
 	for (i = 0; i < n; i++)
 	{
-		reclat_c(earth_pos[i], &radius, &longitude, &latitude);
+		reclat_c(pos[i], &radius, &longitude, &latitude);
 
 		lon[i] = longitude;
 		lat[i] = latitude;
@@ -281,7 +287,7 @@ int time2DDtime(double et_time, dd_time_t *DDtime)
 
 
 // FUNCTION : createTextFile
-int createTextFile(char* filename, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos_iau_mars[3], SpiceDouble lon_iau_mars[], SpiceDouble lat_iau_mars[], SpiceDouble dist[])
+int createTextFile(char* filename, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos_mso_mars[3], SpiceDouble lon_iau_mars[], SpiceDouble lat_iau_mars[], SpiceDouble dist[])
 {
 	FILE* file = NULL;
 	int i;
@@ -294,12 +300,12 @@ int createTextFile(char* filename, SpiceDouble n_iter, SpiceDouble t[], SpiceDou
         // Mars radius
         // for (i = 0; i < n_iter; i++)
         // {
-        // 	fprintf(file, "%.2f %.2f %.2f %.2f %.2f\n", t[i]+J2000, pos_iau_mars[i][0]/R_MARS, pos_iau_mars[i][1]/R_MARS, pos_iau_mars[i][2]/R_MARS, dist[i]/R_MARS);
+        // 	fprintf(file, "%.2f %.2f %.2f %.2f %.2f\n", t[i]+J2000, pos_mso_mars[i][0]/R_MARS, pos_mso_mars[i][1]/R_MARS, pos_mso_mars[i][2]/R_MARS, dist[i]/R_MARS);
         // }
 
         for (i = 0; i < n_iter; i++)
         {
-        	fprintf(file, "%.2f %.2f %.2f %.2f %.2f\n", t[i]+J2000, pos_iau_mars[i][0], pos_iau_mars[i][1], pos_iau_mars[i][2], dist[i]);
+        	fprintf(file, "%.2f %.2f %.2f %.2f %.2f\n", t[i]+J2000, pos_mso_mars[i][0], pos_mso_mars[i][1], pos_mso_mars[i][2], dist[i]);
         }
 
         fclose(file);
@@ -321,7 +327,7 @@ void nc_handle_error(int status, char* operation) {
 }
 
 //FUNCTION : createNc
-int createNc(char* ncfile, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos_iau_mars[3], SpiceDouble lon_iau_mars[], SpiceDouble lat_iau_mars[], SpiceDouble dist[])
+int createNc(char* ncfile, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos_mso_mars[3], SpiceDouble lon_iau_mars[], SpiceDouble lat_iau_mars[], SpiceDouble dist[])
 {
 	
 	/**************** LOCAL VARIABLES ***********************/
@@ -409,19 +415,19 @@ int createNc(char* ncfile, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos
 		nc_handle_error(retval, "Time variable");
 	}
 
-	retval = nc_def_var(ncid, POS_VAR_IAU, NC_DOUBLE, 2, data_tab_dimid, &position_varid);
+	retval = nc_def_var(ncid, POS_VAR_MSO, NC_DOUBLE, 2, data_tab_dimid, &position_varid);
   	if (retval != NC_NOERR)
 	{
-		nc_handle_error(retval, "IAU_MARS Position variable");
+		nc_handle_error(retval, "MSO Position variable");
 	}
 
 
-	retval = nc_def_var(ncid, LON_VAR_IAU_SUN, NC_DOUBLE, 1, &time_dimid, &longitude_iau_varid);
+	retval = nc_def_var(ncid, LON_VAR_MSO, NC_DOUBLE, 1, &time_dimid, &longitude_iau_varid);
 	if (retval != NC_NOERR)
 	{
 		nc_handle_error(retval, "LON IAU_MARS variable");
 	}
-	retval = nc_def_var(ncid, LAT_VAR_IAU_SUN, NC_DOUBLE, 1, &time_dimid, &latitude_iau_varid);
+	retval = nc_def_var(ncid, LAT_VAR_MSO, NC_DOUBLE, 1, &time_dimid, &latitude_iau_varid);
 	if (retval != NC_NOERR)
 	{
 		nc_handle_error(retval, "LAT IAU_MARS variable");
@@ -535,10 +541,10 @@ int createNc(char* ncfile, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos
 	for (i = 0; i < n_iter; i++)
 	{
 		start[0] = i;
-		retval = nc_put_vara_double(ncid, position_varid, start, dataCount, pos_iau_mars[i]);
+		retval = nc_put_vara_double(ncid, position_varid, start, dataCount, pos_mso_mars[i]);
 	 	if (retval != NC_NOERR)
 		{
-			nc_handle_error(retval, "Write IAU position variable");
+			nc_handle_error(retval, "Write MSO position variable");
 		}
 	}
 

@@ -15,9 +15,8 @@ gcc maven_ephemeris.c -o maven_ephemeris -I/home/arnaud/WORK/TOOLS/LIB/cspice/in
 # wget http://naif.jpl.nasa.gov/pub/naif/MAVEN/kernels/fk/maven_v05.tf -P kernels/Maven
 
 #Execute 
-# ./maven_ephemeris "MAVEN" "MARS" "maven" "2014 DEC 31 13:03:46" "2015 JAN 24 17:21:49" 
-./maven_ephemeris "MAVEN" "MARS" "maven" "2014 DEC 01 00:00:00 UTC" "2014 DEC 02 01:00:00 UTC"
-# ./maven_ephemeris "MAVEN" "MARS" "maven" "2015 JAN 19 00:00:00" "2015 JAN 20 00:00:00" 		
+# ./maven_ephemeris "MAVEN" "MARS" "maven" "2014 DEC 01 00:00:00 UTC" "2014 DEC 02 01:00:00 UTC"
+./maven_ephemeris "MAVEN" "MARS" "maven" "2014 DEC 31 00:00:00 UTC" "2015 JAN 02 01:00:00 UTC"	
 
 
 #Move to nc directory
