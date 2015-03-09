@@ -276,12 +276,6 @@ int getDistance(SpiceInt n_iter, SpiceDouble **positions, SpiceDouble dist[])
 //FUNCTION : time2DDtime
 int time2DDtime(double et_time, dd_time_t *DDtime)
 {
-	// char *date_unix_zero = "1970-01-01T00:00:00";
-	// SpiceDouble et_unix_zero;
-
-	// str2et_c(date_unix_zero, &et_unix_zero);
-
-	// strcpy(*DDtime, Double2DD_Time(et_time-et_unix_zero));
 
 	strcpy(*DDtime, Double2DD_Time(et_time+J2000));
 	
