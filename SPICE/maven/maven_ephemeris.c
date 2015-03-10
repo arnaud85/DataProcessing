@@ -617,7 +617,7 @@ int createNc(char* ncfile, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos
 		nc_handle_error(retval, "Close nc file");
 	}
 
-	printf("[INFO] %s has been created\n", ncfile);
+	// printf("[INFO] %s has been created\n", ncfile);
 	/**************** END OF CLOSE NC FILE ***********************/
 
 	return 0;
