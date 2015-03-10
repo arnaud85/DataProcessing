@@ -12,8 +12,8 @@ gcc maven_ephemeris.c -o maven_ephemeris -I/home/arnaud/WORK/TOOLS/LIB/cspice/in
 # mv kernels/Maven/maven_orb_rec.bsp.1 kernels/Maven/maven_orb_rec.bsp
 
 #Execute 
-# ./maven_ephemeris "MAVEN" "MARS" "maven" "2014 SEP 23 13:03:46 UTC" "2015 MAR 03 16:08:21 UTC"	2015
-./maven_ephemeris "MAVEN" "MARS" "maven" "2014 SEP 23 13:03:46 UTC" "2015 JAN 01 00:01:00 UTC"
+# ./maven_ephemeris "MAVEN" "MARS" "maven" "2015 JAN 01 00:00:00 UTC" "2015 JAN 01 00:01:00 UTC"
+./maven_ephemeris "MAVEN" "MARS" "maven" "2015 JAN 01 00:00:00 UTC"
 
 #Move to nc directory
 mv *.txt output/plot/

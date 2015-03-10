@@ -81,6 +81,9 @@ int main(int argc, char const *argv[])
 	char START_DATE[50]; 
 	char STOP_DATE[50]; 
 	char nc_filename[50];
+	const SpiceChar *spk = " kernels/Maven/maven_orb_rec.bsp";
+	// SpiceChar startTime [ TIMLEN ];
+	// SpiceChar stopTime [ TIMLEN ];
 
 
 	//Load specific kernels 
@@ -91,9 +94,9 @@ int main(int argc, char const *argv[])
 	}
 
 	//Configure boundaries
-	getStartStopTimes( spk, -202, startTime, stopTime );
+	getStartStopTimes( spk, -202, START_DATE, STOP_DATE );
 	strcpy(START_DATE, argv[4]);
-	strcpy(STOP_DATE, argv[5]);
+	// strcpy(STOP_DATE, argv[5]);
 
 	n = getBoundaries(START_DATE, &et_0, STOP_DATE, &et_end);
 	if (n <= 0)
@@ -207,7 +210,7 @@ int getBoundaries(char *et_0_str, SpiceDouble *et_0, char *et_end_str, SpiceDoub
 int getStartStopTimes(const SpiceChar *kernel, int bodyIndex, SpiceChar *startTime, SpiceChar *stopTime)
 {
 	// Local variables
-	SPICEDOUBLE_CELL ( cover, MAXIV );
+	SPICEDOUBLE_CELL ( cover, 2000 );
 	SpiceDouble  start; 
 	SpiceDouble  stop;
 
@@ -216,8 +219,8 @@ int getStartStopTimes(const SpiceChar *kernel, int bodyIndex, SpiceChar *startTi
 
 	// Get start and stop times
 	wnfetd_c ( &cover, 0, &start, &stop );
-	timout_c(start, "YYYY MON DD HR:MN:SC UTC ::UTC", TIMLEN, startTime);
-	timout_c(stop, "YYYY MON DD HR:MN:SC UTC ::UTC", TIMLEN, stopTime);
+	timout_c(start, "YYYY MON DD HR:MN:SC UTC ::UTC", 51, startTime);
+	timout_c(stop, "YYYY MON DD HR:MN:SC UTC ::UTC", 51, stopTime);
 
 	return 0;
 }
