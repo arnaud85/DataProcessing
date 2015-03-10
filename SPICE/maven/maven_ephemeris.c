@@ -53,6 +53,7 @@
 
 //Functions prototypes
 int loadKernels(char *kernelsList);
+int getStartStopTimes(const SpiceChar *kernel, int bodyIndex, SpiceChar *startTime, SpiceChar *stopTime);
 int getBoundaries(char *et_0_str, SpiceDouble *et_0, char *et_end_str, SpiceDouble *et_end);
 int getPositions(const char *target, SpiceDouble et_0, SpiceInt step, SpiceInt n_iter, const char *frame, const char *ab_corr, const char *observer, SpiceDouble t[], SpiceDouble **positions);
 int getLonLat(SpiceDouble **pos, SpiceDouble lon[], SpiceDouble lat[], int n);
@@ -90,6 +91,7 @@ int main(int argc, char const *argv[])
 	}
 
 	//Configure boundaries
+	getStartStopTimes( spk, -202, startTime, stopTime );
 	strcpy(START_DATE, argv[4]);
 	strcpy(STOP_DATE, argv[5]);
 
@@ -198,6 +200,26 @@ int getBoundaries(char *et_0_str, SpiceDouble *et_0, char *et_end_str, SpiceDoub
 	n = (int)((*et_end-*et_0)/STEP);
 
 	return n;
+}
+
+
+// FUNCTION : getStartStopTimes
+int getStartStopTimes(const SpiceChar *kernel, int bodyIndex, SpiceChar *startTime, SpiceChar *stopTime)
+{
+	// Local variables
+	SPICEDOUBLE_CELL ( cover, MAXIV );
+	SpiceDouble  start; 
+	SpiceDouble  stop;
+
+	// Get coverage for MAVEN (id : -202)
+	spkcov_c ( kernel, bodyIndex, &cover );
+
+	// Get start and stop times
+	wnfetd_c ( &cover, 0, &start, &stop );
+	timout_c(start, "YYYY MON DD HR:MN:SC UTC ::UTC", TIMLEN, startTime);
+	timout_c(stop, "YYYY MON DD HR:MN:SC UTC ::UTC", TIMLEN, stopTime);
+
+	return 0;
 }
 
 //FUNCTION : getPositions
