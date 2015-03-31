@@ -16,6 +16,9 @@
 
 //SPICE constants
 #define KERNELS     			"maven_ephemeris.tm"
+#define MAXIV          			1000
+#define WINSIZ         			( 2 * MAXIV )
+#define TIMLEN         			51
 #define TARGET					argv[1]
 #define OBSERVER    			argv[2]
 #define FRAME_IAU_MARS  		"IAU_MARS"
@@ -41,11 +44,9 @@
 #define TIME_STR_LEN    		 17
 
 //Other constants
-#define BODY_NAME               argv[3]
-// #define AU              		149597870
-#define J2000 					946728000
+#define J2000 					946727935.816 		//2000-01-01T11:58:55.816 	TO USE (+3s ...) !!!
+// #define J2000 					946727932.816 	//2000-01-01T11:58:52.816 	GOOD (+/- leap seconds)
 #define R_MARS 					3390.0
-// #define STEP    				3600.0
 #define STEP    				60.0
 #define RAD2DEG 				180/M_PI
 #define ERRCODE 				2
@@ -67,7 +68,7 @@ int createNc(char* ncfile, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos
 
 int main(int argc, char const *argv[])
 {
-	//Local variables
+	// Local variables
 	SpiceDouble et_0;
 	SpiceDouble et_end;
 	SpiceDouble *t = NULL;
@@ -80,23 +81,27 @@ int main(int argc, char const *argv[])
 	SpiceInt i;
 	char START_DATE[50]; 
 	char STOP_DATE[50]; 
+	char txt_filename[50];
 	char nc_filename[50];
 	const SpiceChar *spk = " kernels/Maven/maven_orb_rec.bsp";
-	// SpiceChar startTime [ TIMLEN ];
-	// SpiceChar stopTime [ TIMLEN ];
 
 
-	//Load specific kernels 
+	// Load specific kernels 
 	if (!loadKernels(KERNELS))
 	{
 		printf("[ERROR] \"%s\" kernel list : no such file\n", KERNELS);
 		exit(EXIT_FAILURE);
 	}
 
+	// Configure SPICE time parameters
+	timdef_c ( "SET", "SYSTEM", 51, "UTC" );
+
 	//Configure boundaries
 	getStartStopTimes( spk, -202, START_DATE, STOP_DATE );
-	strcpy(START_DATE, argv[4]);
+	// strcpy(START_DATE, argv[4]);
 	// strcpy(STOP_DATE, argv[5]);
+	printf("[INFO] Start time : %s\n", START_DATE);
+	printf("[INFO] Stop  time : %s\n", STOP_DATE);
 
 	n = getBoundaries(START_DATE, &et_0, STOP_DATE, &et_end);
 	if (n <= 0)
@@ -106,7 +111,7 @@ int main(int argc, char const *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	//Memory allocation
+	// Memory allocation
 	t = (SpiceDouble*) malloc(n*sizeof(SpiceDouble));
 	pos_mso = (SpiceDouble**) malloc(n*sizeof(SpiceDouble*));
 	pos_iau_mars = (SpiceDouble**) malloc(n*sizeof(SpiceDouble*));
@@ -137,26 +142,27 @@ int main(int argc, char const *argv[])
 		}
 	}
 	
-	//Compute n positions of the celestial body wanted starting from et_0 epoch with a STEP step
+	// Compute n positions of the celestial body wanted starting from et_0 epoch with a STEP step
 	getPositions(TARGET, et_0, STEP, n, FRAME_MSO, ABCORR, OBSERVER, t, pos_mso);
 	getPositions(TARGET, et_0, STEP, n, FRAME_IAU_MARS, ABCORR, OBSERVER, t, pos_iau_mars);
 
-	//Compute longitudes and latitudes
+	// Compute longitudes and latitudes
 	getLonLat(pos_iau_mars, lon_iau, lat_iau, n);
 
-	//Compute distance to Mars
+	// Compute distance to Mars
 	getDistance(n, pos_iau_mars, distance);
 
-	//Get files name
-	getFilesName(BODY_NAME, START_DATE, ".nc", nc_filename);
+	// Get files name
+	getFilesName(TARGET, START_DATE, ".nc", nc_filename);
+	getFilesName(TARGET, START_DATE, ".txt", txt_filename);
 
 	// Write ascii text file
-	createTextFile("maven_orbit_arnaud.txt", n, t,  pos_mso, lon_iau, lat_iau, distance);
+	createTextFile(txt_filename, n, t,  pos_mso, lon_iau, lat_iau, distance);
 
-	//Write celestial body positions NC file
+	// Write celestial body positions NC file
 	createNc(nc_filename, n, t, pos_mso, lon_iau, lat_iau, distance);
 
-	//Free memory
+	// Free memory
 	free(t);
 	free(distance);
 
@@ -185,7 +191,11 @@ int main(int argc, char const *argv[])
 }
 
 
-//FUNCTION : loadKernels
+/**
+ * [loadKernels Load SPICE kernels]
+ * @param  kernelsList [Name of the file describing kernels to load]
+ * @return             [0 if OK]
+ */
 int loadKernels(char *kernelsList)
 {
 	furnsh_c(kernelsList);
@@ -193,7 +203,46 @@ int loadKernels(char *kernelsList)
 	return 1;
 }
 
-//FUNCTION : getBoundaries
+
+/**
+ * [getStartStopTimes Get time intervall of the SPICE kernel used]
+ * @param  kernel    [Name of the SPICE kernel used]
+ * @param  bodyIndex [Index of the space body]
+ * @param  startTime [Start time]
+ * @param  stopTime  [Stop time]
+ * @return           [0 if OK]
+ */
+int getStartStopTimes(const SpiceChar *kernel, int bodyIndex, SpiceChar *startTime, SpiceChar *stopTime)
+{
+	// Local variables
+	SPICEDOUBLE_CELL ( cover, MAXIV );
+	SpiceDouble  start; 
+	SpiceDouble  stop;
+
+	// Get coverage for MAVEN (id : -202)
+	spkcov_c ( kernel, bodyIndex, &cover );
+
+	// Get start and stop times
+	wnfetd_c ( &cover, 0, &start, &stop );
+	
+	// timout_c(start, "YYYY MON DD HR:MN:SC UTC ::UTC", TIMLEN, startTime);
+	// timout_c(stop, "YYYY MON DD HR:MN:SC UTC ::UTC", TIMLEN, stopTime);
+
+	start += 0.001;
+	timout_c(start, "YYYY MON DD HR:MN:SC.#### UTC ::UTC", TIMLEN, startTime);
+	timout_c(stop, "YYYY MON DD HR:MN:SC.#### UTC ::UTC", TIMLEN, stopTime);
+
+	return 0;
+}
+
+/**
+ * [getBoundaries Get double type boundaries values from corresponding strings]
+ * @param  et_0_str   [Start time (string)]
+ * @param  et_0       [Start time (double)]
+ * @param  et_end_str [Stop time (string)]
+ * @param  et_end     [Stop time (double)]
+ * @return            [0 if OK]
+ */
 int getBoundaries(char *et_0_str, SpiceDouble *et_0, char *et_end_str, SpiceDouble *et_end)
 {
 	SpiceInt n;
@@ -206,26 +255,19 @@ int getBoundaries(char *et_0_str, SpiceDouble *et_0, char *et_end_str, SpiceDoub
 }
 
 
-// FUNCTION : getStartStopTimes
-int getStartStopTimes(const SpiceChar *kernel, int bodyIndex, SpiceChar *startTime, SpiceChar *stopTime)
-{
-	// Local variables
-	SPICEDOUBLE_CELL ( cover, 2000 );
-	SpiceDouble  start; 
-	SpiceDouble  stop;
-
-	// Get coverage for MAVEN (id : -202)
-	spkcov_c ( kernel, bodyIndex, &cover );
-
-	// Get start and stop times
-	wnfetd_c ( &cover, 0, &start, &stop );
-	timout_c(start, "YYYY MON DD HR:MN:SC UTC ::UTC", 51, startTime);
-	timout_c(stop, "YYYY MON DD HR:MN:SC UTC ::UTC", 51, stopTime);
-
-	return 0;
-}
-
-//FUNCTION : getPositions
+/**
+ * [getPositions Computes orbit]
+ * @param  target    [Name of the celestial body]
+ * @param  et_0      [Start time (double)]
+ * @param  step      [Resolution used]
+ * @param  n_iter    [Data number]
+ * @param  frame     [Frame used]
+ * @param  ab_corr   [aberration corrections (yes/no)]
+ * @param  observer  [Reference body]
+ * @param  t         [Time array]
+ * @param  positions [Orbit array]
+ * @return           [0 if OK]
+ */
 int getPositions(const char *target, SpiceDouble et_0, SpiceInt step, SpiceInt n_iter, const char *frame, const char *ab_corr, const char *observer, SpiceDouble t[], SpiceDouble **positions)	 
 {
 	SpiceInt i;
@@ -245,11 +287,20 @@ int getPositions(const char *target, SpiceDouble et_0, SpiceInt step, SpiceInt n
 		
 	}
 
+	// printf("[INFO] t0 : %f\n", t[0]);
+
 	return 1;
 }
 
 
-//FUNCTION : getLonLat
+/**
+ * [getLonLat Get spherical coordonates from orbit computed]
+ * @param  pos [Orbit array]
+ * @param  lon [Longitude array]
+ * @param  lat [Latitude array]
+ * @param  n   [Data number]
+ * @return     [0 if OK]
+ */
 int getLonLat(SpiceDouble **pos, SpiceDouble lon[], SpiceDouble lat[], int n)
 {
 	SpiceInt i;
@@ -269,7 +320,14 @@ int getLonLat(SpiceDouble **pos, SpiceDouble lon[], SpiceDouble lat[], int n)
 }
 
 
-//FUNCTION : getFilesName
+/**
+ * [getFilesName Used to create the netCDF's filename]
+ * @param  bodyName  [Name of the celestial body]
+ * @param  startTime [Start time]
+ * @param  ext       [File's extension]
+ * @param  filename  [Name of the file]
+ * @return           [0 if OK]
+ */
 int getFilesName(const char *bodyName, char startTime[], char ext[], char filename[])
 {
 	SpiceDouble et;
@@ -287,7 +345,13 @@ int getFilesName(const char *bodyName, char startTime[], char ext[], char filena
 }
 
 
-//FUNCTION : getDistance
+/**
+ * [getDistance Get distance from the reference body computed from celestial body's orbit]
+ * @param  n_iter    [Data number]
+ * @param  positions [Celestial body's orbit]
+ * @param  dist      [Distance array]
+ * @return           [0 if OK]
+ */
 int getDistance(SpiceInt n_iter, SpiceDouble **positions, SpiceDouble dist[])
 {
 	SpiceInt i;
@@ -299,7 +363,12 @@ int getDistance(SpiceInt n_iter, SpiceDouble **positions, SpiceDouble dist[])
 }
 
 
-//FUNCTION : time2DDtime
+/**
+ * [time2DDtime Transform time into AMDA time format]
+ * @param  et_time [SPICE time]
+ * @param  DDtime  [AMDA time]
+ * @return         [0 if OK]
+ */
 int time2DDtime(double et_time, dd_time_t *DDtime)
 {
 
@@ -309,7 +378,17 @@ int time2DDtime(double et_time, dd_time_t *DDtime)
 } 
 
 
-// FUNCTION : createTextFile
+/**
+ * [createTextFile Celestial body's orbit (text format)]
+ * @param  filename 		[Name of the file]
+ * @param  n_iter  			[Data number]
+ * @param  t  				[Time array]
+ * @param  pos_mso_mars  	[Orbit array]
+ * @param  lon_iau_mars  	[Longitude array] 
+ * @param  lat_iau_mars  	[Latitude array] 
+ * @param  dist  			[Distance array] 
+ * @return         			[0 if OK]
+ */
 int createTextFile(char* filename, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos_mso_mars[3], SpiceDouble lon_iau_mars[], SpiceDouble lat_iau_mars[], SpiceDouble dist[])
 {
 	FILE* file = NULL;
@@ -328,12 +407,12 @@ int createTextFile(char* filename, SpiceDouble n_iter, SpiceDouble t[], SpiceDou
 
         for (i = 0; i < n_iter; i++)
         {
-        	fprintf(file, "%.2f %.2f %.2f %.2f %.2f\n", t[i]+J2000, pos_mso_mars[i][0], pos_mso_mars[i][1], pos_mso_mars[i][2], dist[i]);
+        	fprintf(file, "%.0f %.2f %.2f %.2f %.2f\n", t[i]+J2000, pos_mso_mars[i][0], pos_mso_mars[i][1], pos_mso_mars[i][2], dist[i]);
         }
 
         fclose(file);
 
-        printf("[INFO] %s has been created\n", filename);
+        // printf("[INFO] %s has been created\n", filename);
     }
 
 	return 0;
@@ -342,14 +421,31 @@ int createTextFile(char* filename, SpiceDouble n_iter, SpiceDouble t[], SpiceDou
 
 
 
-//FUNCTION : nc_handle_error
+/**
+ * [nc_handle_error Catch errors when writing the netCDF file]
+ * @param status    [Status index]
+ * @param operation [Operation]
+ */
 void nc_handle_error(int status, char* operation) {
 
 	printf("[ERROR] %s : %s\n", operation, nc_strerror(status));
 	exit(ERRCODE);
 }
 
-//FUNCTION : createNc
+
+
+
+/**
+ * [createNc Celestial body's orbit (netCDF format)]
+ * @param  ncfile 		[Name of the nc file]
+ * @param  n_iter  			[Data number]
+ * @param  t  				[Time array]
+ * @param  pos_mso_mars  	[Orbit array]
+ * @param  lon_iau_mars  	[Longitude array] 
+ * @param  lat_iau_mars  	[Latitude array] 
+ * @param  dist  			[Distance array] 
+ * @return         			[0 if OK]
+ */
 int createNc(char* ncfile, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos_mso_mars[3], SpiceDouble lon_iau_mars[], SpiceDouble lat_iau_mars[], SpiceDouble dist[])
 {
 	
