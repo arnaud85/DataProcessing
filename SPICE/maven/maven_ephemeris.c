@@ -85,7 +85,6 @@ int main(int argc, char const *argv[])
 	char nc_filename[50];
 	const SpiceChar *spk = " kernels/Maven/maven_orb_rec.bsp";
 
-
 	// Load specific kernels 
 	if (!loadKernels(KERNELS))
 	{
@@ -96,10 +95,31 @@ int main(int argc, char const *argv[])
 	// Configure SPICE time parameters
 	timdef_c ( "SET", "SYSTEM", 51, "UTC" );
 
-	//Configure boundaries
-	getStartStopTimes( spk, -202, START_DATE, STOP_DATE );
-	// strcpy(START_DATE, argv[4]);
-	// strcpy(STOP_DATE, argv[5]);
+	// Configure boundaries
+	// printf("[INFO] Argc : %d\n", argc); 
+
+	// for (i = 0; i < argc; i++)
+	// {
+	// 	printf("[INFO] ARGV[%d] : %s\n", i, argv[i]);
+	// }
+	 
+	
+	if ( argc == 5 )
+	{
+		strcpy(START_DATE, argv[3]);
+		strcpy(STOP_DATE, argv[4]);
+	}
+	else if ( argc == 3 )
+	{
+		getStartStopTimes( spk, -202, START_DATE, STOP_DATE );
+	}
+	else
+	{
+		printf("[ERROR] Usage : maven_ephemeris target reference [start time] [stop time]\n");
+
+		exit(EXIT_FAILURE);
+	}
+	
 	printf("[INFO] Start time : %s\n", START_DATE);
 	printf("[INFO] Stop  time : %s\n", STOP_DATE);
 
@@ -280,10 +300,10 @@ int getPositions(const char *target, SpiceDouble et_0, SpiceInt step, SpiceInt n
 
 		spkpos_c(target, t[i], frame, ab_corr, observer,  positions[i],  &light_time);
 
-		for (j = 0; j < 3; j++)
-		{
-			positions[i][j] /= R_MARS;
-		}
+		// for (j = 0; j < 3; j++)
+		// {
+		// 	positions[i][j] /= R_MARS;
+		// }
 		
 	}
 
@@ -395,20 +415,29 @@ int createTextFile(char* filename, SpiceDouble n_iter, SpiceDouble t[], SpiceDou
 	int i;
  
     file = fopen(filename, "w");
+
+    char utc[50];
  
     if (file != NULL)
     {
 
-        // Mars radius
         // for (i = 0; i < n_iter; i++)
         // {
-        // 	fprintf(file, "%.2f %.2f %.2f %.2f %.2f\n", t[i]+J2000, pos_mso_mars[i][0]/R_MARS, pos_mso_mars[i][1]/R_MARS, pos_mso_mars[i][2]/R_MARS, dist[i]/R_MARS);
+        // 	fprintf(file, "%.0f %.2f %.2f %.2f %.2f\n", t[i]+J2000, pos_mso_mars[i][0], pos_mso_mars[i][1], pos_mso_mars[i][2], dist[i]);
         // }
 
-        for (i = 0; i < n_iter; i++)
+
+    	for (i = 0; i < n_iter; i++)
         {
-        	fprintf(file, "%.0f %.2f %.2f %.2f %.2f\n", t[i]+J2000, pos_mso_mars[i][0], pos_mso_mars[i][1], pos_mso_mars[i][2], dist[i]);
+        	// et2utc_c ( t[i], "C", 3, 50, utc );
+        	et2utc_c ( t[i], "ISOC", 3, 50, utc );
+
+        	// fprintf(file, "%s %.2f %.2f %.2f %.2f\n", utc, pos_mso_mars[i][0], pos_mso_mars[i][1], pos_mso_mars[i][2], dist[i]);
+       		fprintf(file, "%s %e %e %e %e\n", utc, pos_mso_mars[i][0], pos_mso_mars[i][1], pos_mso_mars[i][2], dist[i]);
         }
+
+         
+
 
         fclose(file);
 
