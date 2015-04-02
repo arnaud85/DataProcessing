@@ -41,8 +41,8 @@
 #define DIST_UNIT       		"R_MARS" 
 #define LON_UNIT       			"deg" 
 #define LAT_UNIT                "deg"
-// #define TIME_STR_LEN    		 17
-#define TIME_STR_LEN    		 24
+#define TIME_STR_LEN    		 17
+// #define TIME_STR_LEN    		 24
 
 //Other constants
 #define J2000 					946727935.816 		//2000-01-01T11:58:55.816 	TO USE (+3s ...) !!!
@@ -62,6 +62,7 @@ int getLonLat(SpiceDouble **pos, SpiceDouble lon[], SpiceDouble lat[], int n);
 int getDistance(SpiceInt n_iter, SpiceDouble **positions, SpiceDouble dist[]);
 int getFilesName(const char *bodyName, char startTime[], char ext[], char filename[]);
 int time2DDtime(double et_time, dd_time_t *DDtime);
+int utc2ddTime( char *uctTime, char *ddTime );
 void nc_handle_error(int status, char* operation);
 int createTextFile(char* filename, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos_mso_mars[3], SpiceDouble lon_iau_mars[], SpiceDouble lat_iau_mars[], SpiceDouble dist[]);
 int createNc(char* ncfile, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos_mso_mars[3], SpiceDouble lon_iau_mars[], SpiceDouble lat_iau_mars[], SpiceDouble dist[]);
@@ -398,6 +399,40 @@ int time2DDtime(double et_time, dd_time_t *DDtime)
 	return 0;
 } 
 
+/**
+ * [utc2ddTime Get DD time format from a classical UTC time format]
+ * @param  uctTime [UTC time]
+ * @param  ddTime   [DD time]
+ * @return        [0 if OK]
+ */
+int utc2ddTime( char *uctTime, char *ddTime ) {
+
+	int days[12]={31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+	int i, YEAR, MONTH, DAY, HOUR, MINUTE, SEC, MSK, DOY=0;
+
+	// Get the init classical format UTC time and extract year, month, etc ...
+	sscanf(uctTime, "%d-%d-%dT%d:%d:%d.%d", &YEAR, &MONTH, &DAY, &HOUR, &MINUTE, &SEC, &MSK);
+
+	// Test for leap years
+	if ( ( (YEAR%4 == 0) && (YEAR%100 != 0) ) || ( YEAR%400 == 0 ) )
+	{
+		days[1]++;
+	}
+
+	// Sum of days from Jan 1 to the input date
+	for (i = 0; i < MONTH - 1; i++) 
+	{
+		DOY += days[i];	
+	} 
+
+	DOY += DAY;
+
+	// Write DD time
+	sprintf(ddTime,"%04d%03d%02d%02d%02d%03d\0", YEAR, DOY-1, HOUR, MINUTE, SEC, MSK);
+
+	return 0;
+}
+
 
 /**
  * [createTextFile Celestial body's orbit (text format)]
@@ -430,7 +465,6 @@ int createTextFile(char* filename, SpiceDouble n_iter, SpiceDouble t[], SpiceDou
 
     	for (i = 0; i < n_iter; i++)
         {
-        	// et2utc_c ( t[i], "C", 3, 50, utc );
         	et2utc_c ( t[i], "ISOC", 3, 50, utc );
 
         	// fprintf(file, "%s %.2f %.2f %.2f %.2f\n", utc, pos_mso_mars[i][0], pos_mso_mars[i][1], pos_mso_mars[i][2], dist[i]);
@@ -511,18 +545,23 @@ int createNc(char* ncfile, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos
 	//Dates
     // dd_time_t *DDdates = NULL;
     char **utc = NULL;
+    char **ddTime = NULL;
     size_t i;
 
   	utc = (char**) malloc(n_iter*sizeof(char*));
+  	ddTime = (char**) malloc(n_iter*sizeof(char*));
 
     for (i = 0; i < n_iter; i++)
     {
     	utc[i] = (char*) malloc(50*sizeof(char));
+    	ddTime[i] = (char*) malloc(17*sizeof(char));
     }
 
     for (i = 0; i < n_iter; i++)
     {
     	et2utc_c ( t[i], "ISOC", 3, 50, utc[i] );
+
+    	utc2ddTime( utc[i], ddTime[i] );
 
     	// printf("[INFO] utc[%d] = %s\n", i, utc[i]);
     }
@@ -699,7 +738,7 @@ int createNc(char* ncfile, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos
     {
     	start[0] = i;
 	    // retval = nc_put_vara_text(ncid, time_varid, start, timeCount, DDdates[i]);
-	    retval = nc_put_vara_text(ncid, time_varid, start, timeCount, utc[i]);
+	    retval = nc_put_vara_text(ncid, time_varid, start, timeCount, ddTime[i]);
 		if (retval != NC_NOERR)
 		{
 			nc_handle_error(retval, "Write time variable");
@@ -736,14 +775,14 @@ int createNc(char* ncfile, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos
 	}
 
 	// retval = nc_put_var_text(ncid, startTime_varid, DDdates[0]);
-	retval = nc_put_var_text(ncid, startTime_varid, utc[0]);
+	retval = nc_put_var_text(ncid, startTime_varid, ddTime[0]);
 	if (retval != NC_NOERR)
 	{
 		nc_handle_error(retval, "Write start time variable");
 	}
 
 	// retval = nc_put_var_text(ncid, stopTime_varid, DDdates[(int)n_iter-1]);
-	retval = nc_put_var_text(ncid, stopTime_varid, utc[(int)n_iter-1]);
+	retval = nc_put_var_text(ncid, stopTime_varid, ddTime[(int)n_iter-1]);
 	if (retval != NC_NOERR)
 	{
 		nc_handle_error(retval, "Write stop time variable");
