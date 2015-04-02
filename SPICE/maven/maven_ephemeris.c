@@ -41,7 +41,8 @@
 #define DIST_UNIT       		"R_MARS" 
 #define LON_UNIT       			"deg" 
 #define LAT_UNIT                "deg"
-#define TIME_STR_LEN    		 17
+// #define TIME_STR_LEN    		 17
+#define TIME_STR_LEN    		 24
 
 //Other constants
 #define J2000 					946727935.816 		//2000-01-01T11:58:55.816 	TO USE (+3s ...) !!!
@@ -508,12 +509,29 @@ int createNc(char* ncfile, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos
 	size_t dataCount[2];
 
 	//Dates
-    dd_time_t *DDdates = NULL;
+    // dd_time_t *DDdates = NULL;
+    char **utc = NULL;
+    size_t i;
+
+  	utc = (char**) malloc(n_iter*sizeof(char*));
+
+    for (i = 0; i < n_iter; i++)
+    {
+    	utc[i] = (char*) malloc(50*sizeof(char));
+    }
+
+    for (i = 0; i < n_iter; i++)
+    {
+    	et2utc_c ( t[i], "ISOC", 3, 50, utc[i] );
+
+    	// printf("[INFO] utc[%d] = %s\n", i, utc[i]);
+    }
+	
 
 	//Other
 	int step;
 	int retval;
-	size_t i;
+	// size_t i;
 	size_t j;
 
 
@@ -662,24 +680,26 @@ int createNc(char* ncfile, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos
 	start[1] = 0L;
 
 	//Build DDdate
-	DDdates = (dd_time_t*)malloc((int)n_iter*sizeof(dd_time_t));
-	if(DDdates == NULL)
-	{
-		printf("[ERROR] Unable to build DD dates\n");
+	// DDdates = (dd_time_t*)malloc((int)n_iter*sizeof(dd_time_t));
+	// if(DDdates == NULL)
+	// {
+	// 	printf("[ERROR] Unable to build DD dates\n");
 
-		exit(EXIT_FAILURE);
-	}
+	// 	exit(EXIT_FAILURE);
+	// }
 	
-	for (i = 0; i < n_iter; i++)
-	{
-		time2DDtime(t[i], &DDdates[i]);
-	}
+	// for (i = 0; i < n_iter; i++)
+	// {
+	// 	time2DDtime(t[i], &DDdates[i]);
+	// }
+
 
 	//Write datas
     for (i = 0; i < n_iter; i++)
     {
     	start[0] = i;
-	    retval = nc_put_vara_text(ncid, time_varid, start, timeCount, DDdates[i]);
+	    // retval = nc_put_vara_text(ncid, time_varid, start, timeCount, DDdates[i]);
+	    retval = nc_put_vara_text(ncid, time_varid, start, timeCount, utc[i]);
 		if (retval != NC_NOERR)
 		{
 			nc_handle_error(retval, "Write time variable");
@@ -715,20 +735,22 @@ int createNc(char* ncfile, SpiceDouble n_iter, SpiceDouble t[], SpiceDouble *pos
 		nc_handle_error(retval, "Write distance variable");
 	}
 
-	retval = nc_put_var_text(ncid, startTime_varid, DDdates[0]);
+	// retval = nc_put_var_text(ncid, startTime_varid, DDdates[0]);
+	retval = nc_put_var_text(ncid, startTime_varid, utc[0]);
 	if (retval != NC_NOERR)
 	{
 		nc_handle_error(retval, "Write start time variable");
 	}
 
-	retval = nc_put_var_text(ncid, stopTime_varid, DDdates[(int)n_iter-1]);
+	// retval = nc_put_var_text(ncid, stopTime_varid, DDdates[(int)n_iter-1]);
+	retval = nc_put_var_text(ncid, stopTime_varid, utc[(int)n_iter-1]);
 	if (retval != NC_NOERR)
 	{
 		nc_handle_error(retval, "Write stop time variable");
 	}
 
 	//Free memory
-	free(DDdates);
+	// free(DDdates);
 
 	/************************ END OF WRITING MODE ********************************/
 
