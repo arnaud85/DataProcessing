@@ -1,11 +1,7 @@
 #!/bin/bash
 
-# Compile
-# gcc maven_ephemeris.c -o maven_ephemeris -I/home/arnaud/WORK/TOOLS/LIB/cspice/include -I/home/arnaud/WORK/TOOLS/INCLUDE /home/arnaud/WORK/TOOLS/LIB/cspice/lib/cspice.a -L/home/arnaud/WORK/TOOLS/LIB /home/arnaud/WORK/TOOLS/LIB/libnetcdf.so.7 -lDD -lm
-
-# Download last version of MAVEN ephemride kernel
-# wget http://naif.jpl.nasa.gov/pub/naif/MAVEN/kernels/spk/maven_orb_rec.bsp -P kernels/Maven
-# mv kernels/Maven/maven_orb_rec.bsp.1 kernels/Maven/maven_orb_rec.bsp
+# Download last kernels
+# sh download.sh
 
 # Compute MAVEN orbit 
 # ./maven_ephemeris "maven" "mars" "2014 DEC 01 00:00:00.000 UTC" "2014 DEC 02 00:00:00.000 UTC"
