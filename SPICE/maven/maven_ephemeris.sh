@@ -8,12 +8,12 @@
 ./maven_ephemeris "maven" "mars"
 
 # Move to nc directory
-mv *.txt output/plot/
-mv maven_[0-9]*.nc  output/nc
+mv *.txt plot/
+mv maven_[0-9]*.nc nc
 echo "[INFO] Maven orbit files have been created"
 
 # Cut nc files : one file by year
-cd output/nc
+cd nc
 
 mkdir temp/
 cp maven_[0-9]*.nc temp/
