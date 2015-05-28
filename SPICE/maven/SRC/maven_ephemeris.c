@@ -19,8 +19,8 @@
 #define MAXIV          			1000
 #define WINSIZ         			( 2 * MAXIV )
 #define TIMLEN         			51
-#define TARGET					argv[1]
-#define OBSERVER    			argv[2]
+#define TARGET					argv[2]
+#define OBSERVER    			argv[3]
 #define FRAME_IAU_MARS  		"IAU_MARS"
 #define FRAME_MSO   			"MAVEN_MSO"
 #define ABCORR					"NONE"
@@ -85,7 +85,7 @@ int main(int argc, char const *argv[])
 	char STOP_DATE[50]; 
 	char txt_filename[50];
 	char nc_filename[50];
-	const SpiceChar *spk = " kernels/Maven/maven_orb_rec.bsp";
+	const SpiceChar *spk = argv[1];
 
 	// Load specific kernels 
 	if (!loadKernels(KERNELS))
@@ -97,18 +97,18 @@ int main(int argc, char const *argv[])
 	// Configure SPICE time parameters
 	timdef_c ( "SET", "SYSTEM", 51, "UTC" );
 	 
-	if ( argc == 5 )
+	if ( argc == 6 )
 	{
-		strcpy(START_DATE, argv[3]);
-		strcpy(STOP_DATE, argv[4]);
+		strcpy(START_DATE, argv[4]);
+		strcpy(STOP_DATE, argv[5]);
 	}
-	else if ( argc == 3 )
+	else if ( argc == 4 )
 	{
 		getStartStopTimes( spk, -202, START_DATE, STOP_DATE );
 	}
 	else
 	{
-		printf("[ERROR] Usage : maven_ephemeris target reference [start time] [stop time]\n");
+		printf("[ERROR] Usage : maven_ephemeris kernel target reference [start time] [stop time]\n");
 
 		exit(EXIT_FAILURE);
 	}

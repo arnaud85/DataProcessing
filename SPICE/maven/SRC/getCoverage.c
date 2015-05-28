@@ -35,9 +35,14 @@ int getStartStopTimes(const SpiceChar *kernel, int bodyIndex, SpiceChar *startTi
 
 int main(int argc, char const *argv[])
 {
+	if ( argc != 2)
+	{
+		printf("[ERROR] USAGE : %s spk_kernel\n", argv[0]);
 
-	// const SpiceChar *spk = " kernels/Maven/maven_orb_rec.bsp";
-	const SpiceChar *spk = " kernels/Maven/maven_orb_rec_140922_150101_v1.bsp";
+		exit(EXIT_FAILURE);
+	}
+	
+	const SpiceChar *spk = argv[1];
 	SpiceChar startTime [ TIMLEN ];
 	SpiceChar stopTime [ TIMLEN ];
 
