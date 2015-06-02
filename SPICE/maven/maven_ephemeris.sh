@@ -1,39 +1,35 @@
 #!/bin/bash
 
-# Download last kernels
-# sh download.sh
+# Configuration
+LIB_PATH="/home/arnaud/WORK/TOOLS/LIB/"
+# MAVEN_ARCHIVE_2014="kernels/Maven/maven_orb_rec_140922_150101_v1.bsp" 
+# MAVEN_ARCHIVE_2015="kernels/Maven/maven_orb_rec_150101_150401_v1.bsp"
+MAVEN_UPDATE="kernels/Maven/maven_orb_rec.bsp"
+export LD_LIBRARY_PATH=${LIB_PATH}
 
-# Compute MAVEN orbit 
-# ./maven_ephemeris "maven" "mars" "2014 DEC 01 00:00:00.000 UTC" "2014 DEC 02 00:00:00.000 UTC"
-./maven_ephemeris "maven" "mars"
+# Get last Spice's kernels
+sh getSpiceKernels.sh
 
-# Move to nc directory
+# Compute MAVEN orbit
+# echo "[INFO] KERNEL : ${MAVEN_ARCHIVE_2014}"
+# ./maven_ephemeris ${MAVEN_ARCHIVE_2014} "maven" "mars"
+# echo "[INFO] KERNEL : ${MAVEN_ARCHIVE_2015}"
+# ./maven_ephemeris ${MAVEN_ARCHIVE_2015} "maven" "mars"
+echo "[INFO] KERNEL : ${MAVEN_UPDATE}"
+./maven_ephemeris ${MAVEN_UPDATE} "maven" "mars"
+
+# Test if the maven orbit data file has been correctly created
+ls *.nc >> /dev/null 2>&1
+
+if [[ $? != 0 ]]; then
+	
+	echo "$(date) [ERROR] : Error during creation of maven orbit data file" >> LOG/log.txt
+	exit 1;
+fi
+	
+# Move to outut directory
 mv *.txt plot/
-mv maven_[0-9]*.nc nc
-echo "[INFO] Maven orbit files have been created"
+mv maven_[0-9]*.nc nc/
 
-# Cut nc files : one file by year
-cd nc
-
-mkdir temp/
-cp maven_[0-9]*.nc temp/
-
-mkdir new/
-
-nc2nc maven_[0-9]*.nc -b2014000 -e2015000
-mv maven_2014[0-9]*.nc maven_2014.nc
-mv maven_2014.nc new/
-rm *.log *.rm
-
-cp temp/maven_[0-9]*.nc .
-
-nc2nc maven_[0-9]*.nc -b2015000 -e2016000
-mv maven_2014[0-9]*.nc maven_2015.nc
-mv maven_2015.nc new/
-rm *.log *.rm
-
-cp temp/maven_[0-9]*.nc .
-cp new/* .
-
-rm -r temp/
-rm -r new/
+# End of process
+touch ready
