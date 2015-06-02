@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>MAVEN orbit updating : manuel utilisateur</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+	<div class="container">
+	
+		<h1>MAVEN orbit updating : manuel utilisateur</h1>
+	
+		<summary>
+			<ul>
+				<li><a href="#one">Présentation de l'outil</a></li>
+				<li><a href="#two">Lancement de l'outil en local</a></li>
+				<li><a href="#three">Lancement de l'outil à distance</a></li>
+			</ul>
+		</summary>
+		
+	
+
+		<h2 id="one">1 - Présentation de l'outil</h2>
+
+		<p>L'outil présenté ici à pour but de fournir les données relatives à l'orbite de la sonde <em>MAVEN</em>.</p>
+
+		<p>Ces données se doivent d'être le plus à jour possible et il est donc conseillé de lancer le script de manière assez fréquente (une fois par semaine semble être une fréquence réaliste).</p>
+
+		<p>Ces données générées sont stockées sous la forme d'un fichier au format netCDF.</p>
+
+		<h2 id="two">2 - Lancement de l'outil en local</h2>
+
+		<p>L'outil se lance, classiquement, de la manière suivante :</p>
+
+		<div class="code">sh maven_ephemeris.sh</div>
+
+		<p>La sortie, comme dit un peu plus haut dans ce texte, est stockée au format netCDF et se trouve dans le dossier <em>nc/</em>.</p>
+
+		<h2 id="three">2 - Lancement de l'outil à distance</h2>
+
+		<p>L'outil peut également s'exécuter en lançant la ligne de commande depuis une machine distante en utilisant le protocole <em>ssh</em>.</p>
+
+		<p>Nous avons alors deux machines distinctes :
+		<ul>
+			<li>La machine <strong>locale</strong> sur laquelle est installée la base de donnée dans laquelle va être insérée le fichier d'orbite nouvellement généré.</li>
+			<li>La machine <strong>distante</strong>, ou serveur, sur laquelle est installé le projet et sur laquelle, <em>de facto</em>, seront effectués les traitements.</li>
+		</ul>
+		</p>
+
+		<p>Pour une exécution à distance, il faut lancer non plus un seul mais deux scripts :
+		<ul>
+			<li><em>maven_ephemeris.sh</em> : le script, vu précédemment, qui génère l'orbite de <em>Maven</em></li>
+			<li><em>local2amda.sh</em> : ce script scrute à intervalle régulier si le processus de génération de l'orbite est terminé ou pas. Lorsque c'est le cas, le nouveau fichier créé est rapatrié sur la base distante.</li>
+		</ul></p>
+
+		<p>Supposons que l'adresse de la machine distante est : <em>user@domain</em>.</p>
+
+		<p>Supposons également que le projet est installé dans le dossier situé à l'adresse suivante sur la machine distante : <em>project_path</em>.</p>
+
+		<p>Nous pouvons alors exécuter la procédure à distance, depuis la machine locale, en lançant les commandes suivantes à la suite :</p>
+
+		<p><div class="code">ssh user@domain 'cd project_path; sh maven_ephemeris.sh > /dev/null 2>&1 &'</div></p>
+
+		<p><div class="code">ssh user@domain 'cd project_path; sh local2amda.sh > /dev/null 2>&1 &'</div></p>
+
+	</div>
+
+</body>
+</html>
