@@ -1,2 +1,0 @@
-MAVEN
-ssh arnaud@pc-60.cesr.fr 'cd /home/arnaud/WORK/TOOLS/DEV/DataProcessing/SPICE/maven; sh maven_ephemeris.sh > /dev/null 2>&1 &'; ssh arnaud@pc-60.cesr.fr 'cd /home/arnaud/WORK/TOOLS/DEV/DataProcessing/SPICE/maven; sh local2amda.sh > /dev/null 2>&1 &';

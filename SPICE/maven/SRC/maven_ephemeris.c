@@ -48,7 +48,8 @@
 #define J2000 					946727935.816 		//2000-01-01T11:58:55.816 	TO USE (+3s ...) !!!
 // #define J2000 					946727932.816 	//2000-01-01T11:58:52.816 	GOOD (+/- leap seconds)
 #define R_MARS 					3390.0
-#define STEP    				60.0
+// #define STEP    				60.0
+#define STEP    				1.0
 #define RAD2DEG 				180/M_PI
 #define ERRCODE 				2
 
@@ -446,18 +447,23 @@ int createTextFile(char* filename, SpiceDouble n_iter, SpiceDouble t[], SpiceDou
     if (file != NULL)
     {
 
-        // for (i = 0; i < n_iter; i++)
-        // {
-        // 	fprintf(file, "%.0f %.2f %.2f %.2f %.2f\n", t[i]+J2000, pos_mso_mars[i][0], pos_mso_mars[i][1], pos_mso_mars[i][2], dist[i]);
-        // }
 
+    	// for (i = 0; i < n_iter; i++)
+     //    {
+     //    	et2utc_c ( t[i], "ISOC", 3, 50, utc );
 
-    	for (i = 0; i < n_iter; i++)
+     //    	// fprintf(file, "%s %.2f %.2f %.2f %.2f\n", utc, pos_mso_mars[i][0], pos_mso_mars[i][1], pos_mso_mars[i][2], dist[i]);
+     //   		fprintf(file, "%s %e %e %e %e\n", utc, pos_mso_mars[i][0], pos_mso_mars[i][1], pos_mso_mars[i][2], dist[i]);
+     //    }
+     //    
+     	fprintf(file, "TIME X_MSO Y_MSO Z_MSO LON LAT DIST\n");
+
+        for (i = 0; i < n_iter; i++)
         {
         	et2utc_c ( t[i], "ISOC", 3, 50, utc );
 
         	// fprintf(file, "%s %.2f %.2f %.2f %.2f\n", utc, pos_mso_mars[i][0], pos_mso_mars[i][1], pos_mso_mars[i][2], dist[i]);
-       		fprintf(file, "%s %e %e %e %e\n", utc, pos_mso_mars[i][0], pos_mso_mars[i][1], pos_mso_mars[i][2], dist[i]);
+       		fprintf(file, "%s %e %e %e %e %e %e\n", utc, pos_mso_mars[i][0], pos_mso_mars[i][1], pos_mso_mars[i][2], lon_iau_mars[i], lat_iau_mars[i], dist[i]);
         }
 
          

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>MAVEN orbit updating : manuel administrateur</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+	
+		<h1>MAVEN orbit updating : manuel administrateur</h1>
+	
+		<summary>
+			<ul>
+				<li><a href="#one">Présentation du projet</a></li>
+				<li><a href="#two">Architecture du projet</a></li>
+			</ul>
+		</summary>
+		
+	
+
+		<h2 id="one">1 - Présentation du projet</h2>
+
+		<p>L'outil présenté ici à pour but de fournir les données relatives à l'orbite de la sonde <em>MAVEN</em>.</p>
+
+		<p>La génération de ces données est faite à l'aide la librairie <em>SPICE</em> fournie par la <em>NASA</em>.</p>
+
+		<p>Ces données se doivent d'être le plus à jour possible et il est donc conseillé de lancer le script de manière assez fréquente (une fois par semaine semble être une fréquence réaliste). L'idéal étant bien sûr de connecter une <em>crontab</em> à ce processus.</p>
+
+		<p>Enfin, les données générées sont stockées sous la forme de fichiers au format netCDF, mais également au format ASCII.</p>
+
+		<h2 id="two">2 - Architecture du projet</h2>
+
+		<p>Le projet est construit suivant l'architecture suivante :
+		<ul>
+		 	<li>Un dossier <em>SRC</em> : contient tous les codes sources du projet</li>
+		 	<li>Un dossier <em>DOC</em> : la documentation associée au projet</li>
+		 	<li>Un dossier <em>kernels</em> : contient lui-même deux sous-dossiers abritant des fichiers de données nécessaires à la génération de l'orbite 
+			 	<ul>
+			 	 	<li><em>general</em> : constantes astrophysiques, temporelles, etc ... </li>
+			 	 	<li><em>Maven</em> : données spécifiques à la sonde Maven</li>
+			 	 </ul>  
+		 	 </li>
+		 	<li>Un dossier <em>LOG</em> : contient le fichier <em>log.txt</em> dans lequel seront écrits les erreurs d'exécution, s'il y a lieu.</li>
+		 	<li>Un dossier <em>nc</em> : contient l'orbite de <em>Maven</em> au format netCDF</li>
+		 	<li>Un dossier <em>plot</em> : contient l'orbite de <em>Maven</em> au format ASCII</li>
+		 	<li>Le fichier <em>maven_ephemeris.tm</em> : liste les chemins vers les <em>kernels</em></li>
+		 	<li>Le script <em>getSpiceKernels.sh</em> : télécharge les <em>kernels</em> nécesaires au calcul de l'orbite de <em>Maven</em> et écrit dans le fichier <em>maven_ephemeris.tm</em></li>
+		 	<li>L'exécutable <em>maven_ephemeris</em> : c'est lui qui se charge de calculer l'orbite de <em>Maven</em> à l'aide de la librairie <em>SPICE</em></li>
+		 	<li>Le script <em>maven_ephemeris.sh</em> : script général qui lance la récupération des <em>kernels</em> et la génération de l'orbite par les exécutables</li>
+		 	<li>Le script <em>local2amda.sh</em> : lors d'une exécution à distance, vérifie à intervalles régulier si le processus de génération de l'orbite de <em>Maven</em> est terminé ou pas. Si cela est effectivement le cas, alors le script copie le fichier d'orbite généré depuis la machine distante vers la machine locale.</li>
+		 </ul>
+		</p>
+
+		<p class="info">Dans le script principal, <em>maven_ephemeris.sh</em>, l'exécutable <em>maven_ephemeris</em> est lancé avec trois argument : le kernel utilisé, la cible (en l'occurence <em>Maven</em>) et la référence (<em>Mars</em>). Donc, celui-ci calcule automatiquement l'intervalle de temps pour lequel générer les données d'orbite à partir du <em>kernel</em> utilisé. C'est une mise à jour car, à chaque fois, on lui fournit le <em>kernel</em> le plus à jour fourni par la <em>NASA</em>. Il est également possible de lui fournir deux arguments supplémentaires qui sont les dates de début et de fin pour lesquelles on désire générer des données d'orbite. Ces dates sont à fournir au format "YYYY MMM DD hh:mm::ss.### UTC" (par exemple "2015 JAN 01 00:00:00.000 UTC").</p>
+
+		<p class="info">L'orbite de <em>Maven</em> est générée avec une résolution de 60 secondes.</p>
+
+		<p class="warning">Les secondes intermédiaires (encore appelées <em>leap seconds</em> en anglais ne sont pas encore bien prises en compte).</p>
+	</div>
+
+</body>
+</html>
